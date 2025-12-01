@@ -341,7 +341,9 @@ function startGame() {
         onDragStart: onDragStart,
         onDrop: onDrop,
         onSnapEnd: onSnapEnd,
-        orientation: playerColor
+        orientation: playerColor,
+
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
     };
     
     if (board) board.destroy();
