@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chess Drill Master V4</title>
+    <title>Chess Trainer V5 (Mobile)</title>
     
     <!-- LIBRARIES -->
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
@@ -12,171 +12,199 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
     <style>
-        /* --- STYLES --- */
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #121212; color: #e0e0e0; margin: 0; padding: 10px;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #121212; color: #e0e0e0; margin: 0; padding: 0;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
             user-select: none;
         }
-        .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 8px; }
-        
-        /* HEADER & STATS */
-        header { display: flex; justify-content: space-between; align-items: center; }
-        h2 { color: #81b64c; margin: 0; font-size: 1.2rem; }
-        .stats-badge { background: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-family: monospace; }
 
-        /* BOARD VISUALS */
-        #myBoard { width: 100%; touch-action: none; }
-        
-        /* VISUAL FEEDBACK CLASSES */
-        .highlight-last { background-color: rgba(255, 255, 0, 0.4) !important; }
-        .highlight-check { background-color: rgba(255, 0, 0, 0.6) !important; }
-        .error-flash { animation: flashRed 0.3s ease-in-out; }
-        @keyframes flashRed { 
-            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
-            50% { box-shadow: 0 0 20px 10px rgba(244, 67, 54, 0.5); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        /* --- HEADER --- */
+        header {
+            padding: 10px 15px; background: #1e1e1e; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #333; flex-shrink: 0; height: 50px;
+        }
+        h2 { margin: 0; font-size: 1.1rem; color: #81b64c; }
+        .stats { font-family: monospace; background: #333; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        /* --- MAIN SCROLL AREA --- */
+        .main-content {
+            flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; align-items: center;
+            padding-bottom: 80px; /* Space for bottom bar */
         }
 
-        /* EVAL BAR */
-        .eval-bar-wrapper { width: 100%; height: 6px; background: #444; border-radius: 3px; overflow: hidden; margin: 5px 0; }
-        .eval-bar { height: 100%; background: #eee; width: 50%; transition: width 0.5s ease; }
-
-        /* CONTROLS */
-        .controls { background: #1e1e1e; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
-        .row { display: flex; gap: 8px; }
-        .col { flex: 1; }
+        /* --- BOARD --- */
+        #board-container { width: 100%; max-width: 450px; margin-bottom: 10px; }
+        #myBoard { width: 100%; touch-action: none; }
         
-        label { font-size: 0.75rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
-        select, button { width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #444; border-radius: 6px; font-size: 0.95rem; }
-        button { background: #81b64c; color: #121212; border: none; font-weight: bold; }
-        button:active { transform: scale(0.98); opacity: 0.9; }
-        .btn-secondary { background: #444; color: #fff; }
-        .btn-hint { background: #ff9800; color: #121212; }
+        .eval-bar-wrapper { width: 100%; height: 6px; background: #333; margin-bottom: 5px; border-radius: 3px; overflow: hidden; }
+        .eval-bar { height: 100%; width: 50%; background: #eee; transition: width 0.5s; }
 
-        /* HISTORY */
-        .history-box { background: #1e1e1e; padding: 8px; border-radius: 6px; height: 80px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; }
-        #moveList { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-        #moveList li { padding: 2px 6px; border-radius: 3px; background: #2a2a2a; border-left: 2px solid transparent; }
-        .res-best { border-color: #81b64c; color: #81b64c; }
-        .res-blunder { border-color: #f44336; color: #f44336; text-decoration: line-through; }
-        .res-neutral { border-color: #aaa; color: #aaa; }
+        /* --- STATUS & HISTORY --- */
+        #status { font-size: 0.9rem; color: #aaa; margin-bottom: 10px; text-align: center; min-height: 1.2em; }
+        
+        .settings-box {
+            width: 100%; max-width: 450px; background: #1e1e1e; padding: 10px; border-radius: 8px; margin-bottom: 10px;
+        }
+        .row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .col { flex: 1; }
+        label { display: block; font-size: 0.7rem; color: #888; margin-bottom: 2px; text-transform: uppercase; }
+        select { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; }
 
-        /* STATUS MESSAGE */
-        #status { font-size: 0.9rem; color: #aaa; text-align: center; min-height: 1.2em;}
+        .history-box {
+            width: 100%; max-width: 450px; height: 100px; background: #1e1e1e; padding: 5px; 
+            overflow-y: auto; border-radius: 8px; font-family: monospace; font-size: 0.85rem;
+        }
+        #moveList { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+        #moveList li { padding: 2px 6px; background: #2a2a2a; border-radius: 3px; }
+        
+        /* --- BOTTOM FLOATING BAR --- */
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: #1e1e1e; border-top: 1px solid #333;
+            display: flex; align-items: center; padding: 0 10px; gap: 10px;
+            z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        }
+        
+        .btn {
+            flex: 1; border: none; border-radius: 6px; padding: 12px 0;
+            font-weight: bold; font-size: 0.9rem; cursor: pointer; color: #fff;
+            display: flex; justify-content: center; align-items: center; gap: 5px;
+        }
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
+        
+        .btn-undo { background: #d32f2f; }
+        .btn-hint { background: #f57c00; }
+        .btn-start { background: #81b64c; color: #121212; flex: 1.5; }
+
+        /* --- VISUALS --- */
+        .highlight-last { background-color: rgba(255, 255, 0, 0.4) !important; }
+        .highlight-check { background-color: rgba(255, 0, 0, 0.6) !important; }
+        .error-flash { animation: flashRed 0.3s; }
+        @keyframes flashRed { 50% { box-shadow: 0 0 20px 10px rgba(244, 67, 54, 0.5); } }
+        .res-best { color: #81b64c; border: 1px solid #81b64c; }
+        .res-neutral { color: #aaa; border: 1px solid #444; }
+
     </style>
 </head>
 <body>
 
-<div class="container">
+    <!-- Header -->
     <header>
-        <h2>♟️ Drill Master</h2>
-        <div class="stats-badge" id="statsDisplay">0%</div>
+        <h2>♟️ Trainer V5</h2>
+        <div class="stats" id="statsDisplay">0%</div>
     </header>
 
-    <div class="eval-bar-wrapper"><div id="evalBar" class="eval-bar"></div></div>
-    <div id="myBoard"></div>
-    <div id="status">Initializing...</div>
+    <!-- Scrollable Content -->
+    <div class="main-content">
+        <div id="board-container">
+            <div class="eval-bar-wrapper"><div id="evalBar" class="eval-bar"></div></div>
+            <div id="myBoard"></div>
+        </div>
 
-    <div class="controls">
-        <div class="row">
-            <div class="col">
-                <label>Opening</label>
-                <select id="openingSelect"></select>
+        <div id="status">Initializing Engine...</div>
+
+        <div class="settings-box">
+            <div class="row">
+                <div class="col">
+                    <label>Opening</label>
+                    <select id="openingSelect"></select>
+                </div>
+                <div class="col">
+                    <label>Mode</label>
+                    <select id="modeSelect">
+                        <option value="drill">Strict Drill</option>
+                        <option value="play">Free Play</option>
+                    </select>
+                </div>
             </div>
-            <div class="col">
-                <label>Mode</label>
-                <select id="modeSelect">
-                    <option value="drill">Strict Drill</option>
-                    <option value="play">Free Play</option>
-                </select>
+            <div class="row">
+                <div class="col">
+                    <label>Color</label>
+                    <select id="colorSelect">
+                        <option value="white">White</option>
+                        <option value="black">Black</option>
+                    </select>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <label>Color</label>
-                <select id="colorSelect">
-                    <option value="white">White</option>
-                    <option value="black">Black</option>
-                </select>
-            </div>
-            <div class="col">
-                <label>Action</label>
-                <button id="hintBtn" class="btn-hint">Hint?</button>
-            </div>
+
+        <div class="history-box">
+            <ul id="moveList"></ul>
         </div>
-        <button id="startBtn">Start New Game</button>
     </div>
 
-    <div class="history-box">
-        <ul id="moveList"></ul>
+    <!-- Fixed Bottom Bar -->
+    <div class="bottom-bar">
+        <button id="undoBtn" class="btn btn-undo">↩ Undo</button>
+        <button id="hintBtn" class="btn btn-hint">💡 Hint</button>
+        <button id="startBtn" class="btn btn-start">New Game</button>
     </div>
-</div>
 
 <script>
 /* --- 1. SOUNDS --- */
 const sounds = {
     move: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_common/move-self.mp3'),
     capture: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_common/capture.mp3'),
-    error: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_common/illegal.mp3'), // Error sound
+    error: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_common/illegal.mp3'),
     notify: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_common/notify.mp3')
 };
-function playSound(type) {
-    if (sounds[type]) {
-        sounds[type].currentTime = 0;
-        sounds[type].play().catch(e => console.log("Audio blocked"));
+function playSound(key) {
+    if(sounds[key]) {
+        sounds[key].currentTime = 0;
+        sounds[key].play().catch(() => {});
     }
 }
 
-/* --- 2. OPENING DATA --- */
+/* --- 2. OPENINGS --- */
 const openings = {
-    "Italian Game": { name: "Italian Game", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4"], desc: "Center control" },
+    "Italian Game": { name: "Italian Game", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4"], desc: "Center Control" },
     "Ruy Lopez": { name: "Ruy Lopez", moves: ["e4", "e5", "Nf3", "Nc6", "Bb5"], desc: "Spanish Game" },
-    "Sicilian Defense": { name: "Sicilian Defense", moves: ["e4", "c5", "Nf3", "d6", "d4", "cxd4", "Nxd4"], desc: "Fighting Black defense" },
-    "French Defense": { name: "French Defense", moves: ["e4", "e6", "d4", "d5"], desc: "Solid structure" },
-    "London System": { name: "London System", moves: ["d4", "d5", "Bf4"], desc: "System opening" },
-    "Queen's Gambit": { name: "Queen's Gambit", moves: ["d4", "d5", "c4"], desc: "White sacrifices pawn" }
+    "Sicilian Defense": { name: "Sicilian Defense", moves: ["e4", "c5", "Nf3", "d6", "d4", "cxd4", "Nxd4"], desc: "Fighting Defense" },
+    "French Defense": { name: "French Defense", moves: ["e4", "e6", "d4", "d5"], desc: "Solid Structure" },
+    "London System": { name: "London System", moves: ["d4", "d5", "Bf4"], desc: "White System" },
+    "Queen's Gambit": { name: "Queen's Gambit", moves: ["d4", "d5", "c4"], desc: "Pawn Sacrifice" }
 };
 
-/* --- 3. STATE VARIABLES --- */
-var board = null;
-var game = new Chess();
-var stockfish = null;
-var currentOpening = null;
-var moveIndex = 0;
-var playerColor = 'white';
-var gameMode = 'drill'; // 'drill' or 'play'
+/* --- 3. STATE --- */
+var board, game = new Chess(), stockfish;
+var currentOpening = null, moveIndex = 0, playerColor = 'white', gameMode = 'drill';
 var stats = { correct: 0, total: 0 };
 
-/* --- 4. ENGINE LOADER --- */
+/* --- 4. ENGINE --- */
 const stockfishUrl = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js';
-fetch(stockfishUrl).then(r => r.text()).then(txt => {
-    const blob = new Blob([txt], { type: 'application/javascript' });
+fetch(stockfishUrl).then(r=>r.text()).then(txt => {
+    var blob = new Blob([txt], {type: 'application/javascript'});
     stockfish = new Worker(URL.createObjectURL(blob));
     stockfish.postMessage('uci');
-    stockfish.postMessage('setoption name Skill Level value 1');
+    stockfish.postMessage('setoption name Skill Level value 1'); 
     stockfish.onmessage = (e) => {
         if(e.data.startsWith('bestmove') && game.turn() !== playerColor[0]) {
-            var moveData = e.data.split(' ')[1];
-            setTimeout(() => makeEngineMove(moveData.substring(0,2), moveData.substring(2,4)), 400);
-        } else if (e.data.includes('cp ')) {
-            updateEvalBar(e.data);
+            var m = e.data.split(' ')[1];
+            setTimeout(() => makeEngineMove(m.substring(0,2), m.substring(2,4)), 300);
         }
+        if(e.data.includes('cp ')) updateEval(e.data);
     };
-    document.getElementById('status').innerText = "Engine Ready.";
+    document.getElementById('status').innerText = "Engine Ready. Press New Game.";
     loadStats();
 });
 
-/* --- 5. GAME FUNCTIONS --- */
+/* --- 5. LOGIC --- */
 function init() {
-    const sel = document.getElementById('openingSelect');
-    for (let k in openings) {
-        let opt = document.createElement('option');
+    var sel = document.getElementById('openingSelect');
+    for(var k in openings) {
+        var opt = document.createElement('option');
         opt.value = k; opt.innerText = k; sel.appendChild(opt);
     }
     window.addEventListener('resize', () => { if(board) board.resize(); });
     $('#myBoard').on('touchmove', (e) => e.preventDefault());
+    
+    // Button Bindings
+    document.getElementById('startBtn').onclick = startGame;
+    document.getElementById('undoBtn').onclick = undoMove;
+    document.getElementById('hintBtn').onclick = showHint;
 }
 
 function startGame() {
@@ -186,110 +214,77 @@ function startGame() {
     currentOpening = openings[document.getElementById('openingSelect').value];
     moveIndex = 0;
     
-    // UI Resets
     document.getElementById('moveList').innerHTML = '';
-    document.getElementById('status').innerHTML = `<b style="color:#81b64c">${currentOpening.name}</b><br>${currentOpening.desc}`;
+    updateStatus();
     removeHighlights();
-    sounds.notify.play('notify');
+    sounds.notify.play();
 
-    // Board Setup
-    var config = {
+    if(board) board.destroy();
+    board = Chessboard('myBoard', {
         draggable: true,
         position: 'start',
+        orientation: playerColor,
         onDragStart: onDragStart,
         onDrop: onDrop,
-        onSnapEnd: onSnapEnd,
-        orientation: playerColor,
+        onSnapEnd: () => board.position(game.fen()),
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-    };
-    if (board) board.destroy();
-    board = Chessboard('myBoard', config);
+    });
 
-    // Auto-play if Black
-    if (playerColor === 'black') setTimeout(playBookMove, 500);
+    if(playerColor === 'black') setTimeout(playBookMove, 500);
 }
 
 function onDragStart(source, piece) {
-    if (game.game_over()) return false;
-    if ((playerColor === 'white' && piece.search(/^b/) !== -1) ||
-        (playerColor === 'black' && piece.search(/^w/) !== -1)) return false;
+    if(game.game_over()) return false;
+    if((playerColor === 'white' && piece.search(/^b/) !== -1) || 
+       (playerColor === 'black' && piece.search(/^w/) !== -1)) return false;
 }
 
 function onDrop(source, target) {
-    // 1. Check for Game Over first
-    if (game.game_over()) return false;
-
-    // 2. Simulate the move to get SAN notation (e.g., "Nf3")
+    if(game.game_over()) return false;
+    
+    // Dry run
     var tempGame = new Chess(game.fen());
-    var tempMove = tempGame.move({ from: source, to: target, promotion: 'q' });
-    if (tempMove === null) return 'snapback'; // Illegal chess move
+    var tempMove = tempGame.move({from:source, to:target, promotion:'q'});
+    if(!tempMove) return 'snapback';
 
-    // 3. STRICT DRILL LOGIC
-    if (gameMode === 'drill' && moveIndex < currentOpening.moves.length) {
-        let expected = currentOpening.moves[moveIndex];
-        if (tempMove.san !== expected) {
-            // WRONG MOVE -> SNAP BACK
-            triggerError(tempMove.san, expected);
-            return 'snapback'; 
+    // Drill Check
+    if(gameMode === 'drill' && moveIndex < currentOpening.moves.length) {
+        if(tempMove.san !== currentOpening.moves[moveIndex]) {
+            triggerError(currentOpening.moves[moveIndex]);
+            return 'snapback';
         }
     }
 
-    // 4. Commit the move to real game
-    var move = game.move({ from: source, to: target, promotion: 'q' });
-    
-    // 5. Success Actions
+    // Execute
+    var move = game.move({from:source, to:target, promotion:'q'});
     playSound(move.flags.includes('c') ? 'capture' : 'move');
     highlightMove(source, target);
     
-    // 6. Update Stats & Logs
-    if (moveIndex < currentOpening.moves.length) {
+    // Log
+    if(moveIndex < currentOpening.moves.length) {
         logMove(move.san, 'res-best');
         moveIndex++;
         stats.correct++;
     } else {
-        logMove(move.san, 'res-neutral'); // Out of book play
+        logMove(move.san, 'res-neutral');
     }
     saveStats();
+    updateStatus();
 
-    // 7. Opponent Response
-    checkStatus();
-    if (!game.game_over()) {
-        if (moveIndex < currentOpening.moves.length) setTimeout(playBookMove, 500);
+    // Reply
+    if(!game.game_over()) {
+        if(moveIndex < currentOpening.moves.length) setTimeout(playBookMove, 500);
         else {
-            // Engine play
             stockfish.postMessage(`position fen ${game.fen()}`);
             stockfish.postMessage('go depth 6');
         }
     }
 }
 
-function triggerError(played, expected) {
-    playSound('error');
-    document.getElementById('status').innerHTML = `<span style="color:#f44336; font-weight:bold">WRONG!</span> Book move is: <b>${expected}</b>`;
-    
-    // Visual Flash
-    let boardEl = document.getElementById('myBoard');
-    boardEl.classList.add('error-flash');
-    setTimeout(() => boardEl.classList.remove('error-flash'), 300);
-    
-    stats.total++; // Count errors
-    saveStats();
-}
-
-function makeEngineMove(from, to) {
-    let move = game.move({ from: from, to: to, promotion: 'q' });
-    if (move) {
-        board.position(game.fen());
-        playSound(move.flags.includes('c') ? 'capture' : 'move');
-        highlightMove(from, to);
-        checkStatus();
-    }
-}
-
 function playBookMove() {
-    if (moveIndex < currentOpening.moves.length) {
-        let m = currentOpening.moves[moveIndex];
-        let move = game.move(m);
+    if(moveIndex < currentOpening.moves.length) {
+        var m = currentOpening.moves[moveIndex];
+        var move = game.move(m);
         board.position(game.fen());
         playSound(move.flags.includes('c') ? 'capture' : 'move');
         highlightMove(move.from, move.to);
@@ -298,62 +293,85 @@ function playBookMove() {
     }
 }
 
-/* --- 6. HELPERS --- */
-function onSnapEnd() { board.position(game.fen()); }
+function makeEngineMove(from, to) {
+    var move = game.move({from:from, to:to, promotion:'q'});
+    if(move) {
+        board.position(game.fen());
+        playSound(move.flags.includes('c') ? 'capture' : 'move');
+        highlightMove(from, to);
+        updateStatus();
+    }
+}
+
+function undoMove() {
+    game.undo(); game.undo();
+    board.position(game.fen());
+    removeHighlights();
+    if(moveIndex > 0) moveIndex--;
+    
+    var list = document.getElementById('moveList');
+    if(list.children.length > 0) list.removeChild(list.firstChild);
+    if(list.children.length > 0) list.removeChild(list.firstChild);
+    
+    document.getElementById('status').innerText = "Undone.";
+}
+
+/* --- HELPERS --- */
+function triggerError(expected) {
+    playSound('error');
+    document.getElementById('status').innerHTML = `<b style="color:#f44336">WRONG!</b> Book move: ${expected}`;
+    $('#myBoard').addClass('error-flash');
+    setTimeout(()=>$('#myBoard').removeClass('error-flash'), 300);
+    stats.total++; saveStats();
+}
+
 function highlightMove(from, to) {
     $('.square-55d63').removeClass('highlight-last');
-    $('.square-' + from).addClass('highlight-last');
-    $('.square-' + to).addClass('highlight-last');
+    $('.square-'+from).addClass('highlight-last');
+    $('.square-'+to).addClass('highlight-last');
 }
 function removeHighlights() { $('.square-55d63').removeClass('highlight-last'); }
 
-function checkStatus() {
-    if (game.in_checkmate()) document.getElementById('status').innerText = "Game Over: Checkmate!";
-    else if (game.in_check()) document.getElementById('status').innerText = "Check!";
-    else document.getElementById('status').innerText = "Your turn.";
+function updateStatus() {
+    var msg = game.in_checkmate() ? "Checkmate!" : (game.in_check() ? "Check!" : "Your Turn");
+    if(moveIndex < currentOpening.moves.length) msg += ` (Book: ${currentOpening.name})`;
+    document.getElementById('status').innerText = msg;
 }
 
 function logMove(san, cls) {
-    let li = document.createElement('li');
+    var li = document.createElement('li');
     li.className = cls; li.innerText = san;
     document.getElementById('moveList').prepend(li);
 }
 
-/* --- 7. STATS & HINTS --- */
-function saveStats() {
-    localStorage.setItem('chessStatsV4', JSON.stringify(stats));
-    let rate = stats.total === 0 ? 0 : Math.round((stats.correct/stats.total)*100);
-    document.getElementById('statsDisplay').innerText = `${rate}%`;
-}
-function loadStats() {
-    let saved = localStorage.getItem('chessStatsV4');
-    if(saved) stats = JSON.parse(saved);
-    saveStats();
+function updateEval(data) {
+    var parts = data.split(' ');
+    var idx = parts.indexOf('cp');
+    if(idx !== -1) {
+        var cp = parseInt(parts[idx+1]);
+        if(game.turn() === 'b') cp = -cp;
+        var pct = 50 + (cp/15);
+        pct = Math.max(5, Math.min(95, pct));
+        if(playerColor==='black') pct = 100 - pct;
+        document.getElementById('evalBar').style.width = pct + '%';
+    }
 }
 
 function showHint() {
-    if (moveIndex < currentOpening.moves.length) {
-        alert(`Book Move: ${currentOpening.moves[moveIndex]}`);
-    } else {
-        alert("You are out of book! Use your tactical skills.");
-    }
+    if(moveIndex < currentOpening.moves.length) alert(`Book Move: ${currentOpening.moves[moveIndex]}`);
+    else alert("Out of book!");
 }
 
-function updateEvalBar(data) {
-    let parts = data.split(' ');
-    let idx = parts.indexOf('cp');
-    if(idx !== -1) {
-        let cp = parseInt(parts[idx+1]);
-        if(game.turn() === 'b') cp = -cp;
-        let percent = 50 + (cp/15); 
-        percent = Math.max(5, Math.min(95, percent));
-        if(playerColor === 'black') percent = 100 - percent;
-        document.getElementById('evalBar').style.width = percent + '%';
-    }
+function saveStats() {
+    localStorage.setItem('chessStatsV5', JSON.stringify(stats));
+    loadStats();
 }
-
-document.getElementById('startBtn').onclick = startGame;
-document.getElementById('hintBtn').onclick = showHint;
+function loadStats() {
+    var saved = localStorage.getItem('chessStatsV5');
+    if(saved) stats = JSON.parse(saved);
+    var rate = stats.total===0 ? 0 : Math.round((stats.correct/stats.total)*100);
+    document.getElementById('statsDisplay').innerText = rate + "%";
+}
 
 init();
 </script>
